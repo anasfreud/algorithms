@@ -10,7 +10,7 @@ class LongInt
 {
 private:
 	int   m_length = 0;
-	int * m_digits = nullptr;
+	short * m_digits = nullptr;
 	bool  m_sign = true;
 
 public:
@@ -36,7 +36,7 @@ public:
 		m_sign = sign;
 		cnt++;
 	}
-	int& operator[] (int i)
+	short& operator[] (short i)
 	{
 		return m_digits[i];
 	}
@@ -46,14 +46,14 @@ public:
 	{
 		clearMemory();
 		m_length = len;
-		m_digits = new int[m_length];
+		m_digits = new short[m_length];
 	}
 
 	// добавление нового разряда
 	void addDigit(int d)
 	{
 		cnt += 2;
-		int* newDigits = new int[m_length + 1];
+		short* newDigits = new short[m_length + 1];
 		for (int i = 0; i < m_length; i++) {
 			newDigits[i] = m_digits[i];
 			cnt++;
@@ -69,7 +69,7 @@ public:
 	void deleteZeroes()
 	{
 		cnt += 2;
-		while (m_length >= 0 && m_digits[m_length - 1] == 0) {
+		while (m_length > 1 && m_digits[m_length - 1] == 0) {
 			m_length--;
 			cnt += 3;
 		}
@@ -86,22 +86,25 @@ public:
 };	
 
 // сумма двух чисел по модулю
-LongInt absAdd(LongInt, LongInt);
+LongInt absAdd(LongInt&, LongInt&);
 
 // разность двух чисел по модулю
-LongInt absSub(LongInt, LongInt);
+LongInt absSub(LongInt&, LongInt&);
 
 // сумма двух чисел с учетом знаков
-LongInt add(LongInt, LongInt);
+LongInt add(LongInt&, LongInt&);
 
 // разность двух чисел с учетом знаков
-LongInt sub(LongInt, LongInt);
+LongInt sub(LongInt&, LongInt&);
 
 // сдвиг числа на n разрядов влево
-LongInt shift(LongInt, int);
+LongInt shift(LongInt&, int);
 
 // разбиение числа на две части одинаковой длины
-pair<LongInt, LongInt> split(LongInt);
+pair<LongInt, LongInt> split(LongInt&);
+
+// приведение к одинаковой длине
+void equate(LongInt&, LongInt&);
 
 // произведение двух чисел по алгоритму Карацубы
 LongInt mult(LongInt, LongInt);
@@ -109,11 +112,61 @@ LongInt mult(LongInt, LongInt);
 // заполнение числа случайными цифрами
 void fillRandom(LongInt&);
 
+ostream& operator << (ostream& os, LongInt& n)
+{
+	/*if (n.length() == 0)
+	{
+		os << '0';
+		return os;
+	}*/
+	if (!n.sign())
+	{
+		os << '-';
+	}
+	for (int i = n.length() - 1; i >= 0; i--)
+	{
+		os << n[i];
+	}
+
+	return os;
+}
+
+istream& operator >> (istream& in, LongInt& n)
+{
+	string s;
+	in >> s;
+	if (s[0] == '-')
+	{
+		n.setSign(false);
+		s.erase(0, 1);
+	}
+	n.resize(s.size());
+
+	reverse(s.begin(), s.end());
+
+	for (int i = 0; i < s.size(); i++)
+	{
+		n[i] = s[i] - '0';
+	}
+
+	return in;
+}
+
+
 int main()
 {
 	srand(time(0));
+	/*LongInt n;
+	cin >> n;
+	LongInt s1 = split(n).first;
+	LongInt s2 = split(n).second;
+	cout << s1 << ' ' << s2 << endl;*/
+	LongInt n1, n2;
+	cin >> n1 >> n2;
+	LongInt r = mult(n1, n2);
+	cout << endl << r << endl;
 	
-	for (int i = 1024; i <= 8192; i += 1024) {
+	/*for (int i = 1024; i <= 8192; i += 1024) {
 		cnt = 0;
 		LongInt a{ i };
 		fillRandom(a);
@@ -126,12 +179,12 @@ int main()
 		b.clearMemory();
 		m.clearMemory();
 
-	}
+	}*/
 
 	return 0;
 }
 
-LongInt absAdd(LongInt a, LongInt b)
+LongInt absAdd(LongInt& a, LongInt& b)
 {
 	cnt++;
 	if (a.length() < b.length()) {
@@ -164,7 +217,7 @@ LongInt absAdd(LongInt a, LongInt b)
 	return r;
 }
 
-LongInt absSub(LongInt a, LongInt b)
+LongInt absSub(LongInt& a, LongInt& b)
 {
 	cnt++;
 	if (a.length() < b.length()) {
@@ -199,7 +252,7 @@ LongInt absSub(LongInt a, LongInt b)
 	return r;	
 }
 
-LongInt add(LongInt a, LongInt b)
+LongInt add(LongInt& a, LongInt& b)
 {
 	cnt++;
 	if (a.length() < b.length()) {
@@ -235,14 +288,15 @@ LongInt add(LongInt a, LongInt b)
 	return r;
 }
 
-LongInt sub(LongInt a, LongInt b)
+LongInt sub(LongInt& a, LongInt& b)
 {
-	b.setSign(!b.sign());
-	cnt++;
-	return add(a, b);
+	LongInt b1 = b;
+	b1.setSign(!b1.sign());
+	cnt += 2;
+	return add(a, b1);
 }
 
-LongInt shift(LongInt x, int k)
+LongInt shift(LongInt& x, int k)
 {
 	cnt++;
 	LongInt r{ x.length() + k};
@@ -256,39 +310,77 @@ LongInt shift(LongInt x, int k)
 		r[i] = x[i - k];
 		cnt += 2;
 	}
+	cout << " k " << k << " len " << x.length() << endl;
 	return r;
 }
 
-pair<LongInt, LongInt> split(LongInt x)
+pair<LongInt, LongInt> split(LongInt& x)
 {
 	cnt++;
-	int length = x.length() / 2;
-	LongInt x1{ length };
-	LongInt x2{ length };
+	int length1 = x.length() / 2;
+	int length2 = x.length() / 2 + x.length() % 2;
+	LongInt x1{ length1 };
 
-	for (int i = 0; i < length; i++) {
+	if (length1 == 0) {
+		x1.addDigit(0);
+	}
+
+	LongInt x2{ length2 };
+
+	for (int i = 0; i < length1; i++) {
 		x1[i] = x[i];
 		cnt++;
 	}
-	for (int i = length; i < x.length(); i++) {
-		x2[i - length] = x[i];
+	for (int i = length1; i < x.length(); i++) {
+		x2[i - length1] = x[i];
 		cnt += 2;
 	}
 
 	return make_pair(x1, x2);
 }
 
+void equate(LongInt& a, LongInt& b)
+{
+	if (a.length() < b.length()) {
+		equate(b, a);
+		return;
+	}
+
+	while (a.length() != b.length()) {
+		b.addDigit(0);
+	}
+}
+
 LongInt mult(LongInt a, LongInt b)
 {
+	equate(a, b);
+	cout << a << " * " << b << " = \n";
 	LongInt r;
 
 	cnt += 2;
 	if (a.length() == b.length() && a.length() <= 1) {
 		cnt += 2;
-		r.addDigit(a[0] * b[0]);
+
+
+		int m = a[0] * b[0];
+		int m1 = m;
+		int c = 0;
+		while (m1)
+		{
+			m1 /= 10;
+			c++;
+		}
+		r.resize(c);
+		for (int i = 0; i < c; i++) {
+			r[i] = m % 10;
+			m /= 10;
+		}
+
 		r.setSign(a.sign() == b.sign());
+		cout << a << " * " << b << " = " << r << endl;
 		return r;
 	}
+
 
 	pair<LongInt, LongInt> aSplit = split(a);
 	pair<LongInt, LongInt> bSplit = split(b);
@@ -296,26 +388,37 @@ LongInt mult(LongInt a, LongInt b)
 	int n = a.length();
 	cnt++;
 
+	cout << " first ";
 	LongInt first = mult(aSplit.first, bSplit.first);
+	cout << " second ";
 	LongInt second = mult(aSplit.second, bSplit.second);
 	LongInt sub1 = sub(aSplit.second, aSplit.first);
 	LongInt sub2 = sub(bSplit.first, bSplit.second);
+	cout << " comb ";
 	LongInt comb = mult(sub1, sub2);
 	LongInt shift1 = shift(second, n);
+	cout << " shift 1 " << shift1 << endl;
 	LongInt shift2 = shift(second, n / 2);
+	cout << " shift 2 " << shift2 << endl;
 	LongInt shift3 = shift(comb, n / 2);
+	cout << " shift 3 " << shift3 << endl;
 	LongInt shift4 = shift(first, n / 2);
+	cout << " shift 4 " << shift4 << endl;
+	LongInt sum1 = add(shift1, shift2);
+	cout << "sum1 " << sum1 << endl;
+	LongInt sum2 = add(shift4, first);
+	cout << "sum2 " << sum2 << endl;
+	LongInt sum3 = add(sum1, shift3);
+	cout << "sum3 " << sum3 << endl;
+
 
 	cnt += 3;
-	r = add(add(
-		add(shift1, shift2),
-		shift3),
-		add(shift4, first));
+	r = add(sum3, sum2);
 	
 	cnt++;
 	r.setSign(a.sign() == b.sign());
 
-	first.clearMemory();
+	/*first.clearMemory();
 	second.clearMemory();
 	sub1.clearMemory();
 	sub2.clearMemory();
@@ -328,7 +431,10 @@ LongInt mult(LongInt a, LongInt b)
 	shift2.clearMemory();
 	shift3.clearMemory();
 	shift4.clearMemory();
-
+	sum1.clearMemory();
+	sum2.clearMemory();
+	sum3.clearMemory();*/
+	cout << r << endl;
 	return r;
 }
 
