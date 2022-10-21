@@ -94,11 +94,10 @@ int main()
 
     srand(time(nullptr));
 
-    HashTable table;
-
     for (double alpha = 0.05; alpha <= 0.95; alpha += 0.05) {
         int sum = 0;
         for (int k = 0; k < 1000; k++) {
+            HashTable table;
             table.setRandoms();
             while (table.alpha < alpha) {
                 sum += table.addObj(randomObj());
