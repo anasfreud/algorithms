@@ -1,410 +1,180 @@
 #include <iostream>
-#include <random>
-#include <ctime>
 #include <string>
 #include <algorithm>
+#include <vector>
+#include <random>
+#include <ctime>
+
 
 using namespace std;
 
-int cnt;
 
-class LongInt
-{
-private:
-	int   m_length = 0;
-	short * m_digits = nullptr;
-	bool  m_sign = true;
-
-public:
-	LongInt()
-	{
-		resize(0);
-	}
-	LongInt(int len)
-	{
-		resize(len);
-	}
-
-	int length()
-	{
-		return m_length;
-	}
-	int sign()
-	{
-		return m_sign;
-	}
-	void setSign(bool sign)
-	{
-		m_sign = sign;
-		cnt++;
-	}
-	short& operator[] (short i)
-	{
-		return m_digits[i];
-	}
-
-	// изменение размера числа
-	void resize(int len)
-	{
-		clearMemory();
-		m_length = len;
-		m_digits = new short[m_length];
-	}
-
-	// добавление нового разряда
-	void addDigit(int d)
-	{
-		cnt += 2;
-		short* newDigits = new short[m_length + 1];
-		for (int i = 0; i < m_length; i++) {
-			newDigits[i] = m_digits[i];
-			cnt++;
-		}
-		newDigits[m_length] = d;
-		m_length++;
-		delete[] m_digits;
-		m_digits = newDigits;
-		cnt += 3;
-	}
-
-	// удаление ведущих нулей
-	void deleteZeroes()
-	{
-		cnt += 2;
-		while (m_length > 1 && m_digits[m_length - 1] == 0) {
-			m_length--;
-			cnt += 3;
-		}
-	}
-
-	// очистка динамической памяти
-	void clearMemory()
-	{
-		if (m_digits != nullptr) {
-			delete[] m_digits;
-			m_digits = nullptr;
-		}
-	}
-};	
-
-// сумма двух чисел по модулю
-LongInt absAdd(LongInt&, LongInt&);
-
-// разность двух чисел по модулю
-LongInt absSub(LongInt&, LongInt&);
-
-// сумма двух чисел с учетом знаков
-LongInt add(LongInt&, LongInt&);
-
-// разность двух чисел с учетом знаков
-LongInt sub(LongInt&, LongInt&);
-
-// сдвиг числа на n разрядов влево
-LongInt shift(LongInt&, int);
-
-// разбиение числа на две части одинаковой длины
-pair<LongInt, LongInt> split(LongInt&);
-
-// приведение к одинаковой длине
-void equate(LongInt&, LongInt&);
-
-// произведение двух чисел по алгоритму Карацубы
-LongInt mult(LongInt, LongInt);
-
-// заполнение числа случайными цифрами
-void fillRandom(LongInt&);
-
-ostream& operator << (ostream& os, LongInt& n)
-{
-	if (!n.sign())
-	{
-		os << '-';
-	}
-	for (int i = n.length() - 1; i >= 0; i--)
-	{
-		os << n[i];
-	}
-
-	return os;
-}
-
-istream& operator >> (istream& in, LongInt& n)
+void read(vector<int>& v)
 {
 	string s;
-	in >> s;
-	if (s[0] == '-')
-	{
-		n.setSign(false);
-		s.erase(0, 1);
-	}
-	n.resize(s.size());
-
+	cin >> s;
 	reverse(s.begin(), s.end());
-
-	for (int i = 0; i < s.size(); i++)
-	{
-		n[i] = s[i] - '0';
+	for (int i = 0; i < s.size(); i++) {
+		v.push_back(s[i] - '0');
 	}
-
-	return in;
 }
+
+void print(vector<int> v)
+{
+	for (int i = v.size() - 1; i >= 0; i--) {
+		cout << v[i] << ' ';
+	}
+	cout << endl;
+}
+
+
+vector<int> add(vector<int>, vector<int>);
+vector<int> sub(vector<int>, vector<int>);
+void normalize(vector<int>&);
+void extend(vector<int>&, vector<int>&);
+vector<int> mul(vector<int>, vector<int>);
+vector<int> naiveMul(vector<int>, vector<int>);
+vector<int> shift(vector<int>, int);
+vector<int> randomNumber(int);
 
 
 int main()
 {
-	srand(time(0));
-
-	LongInt n1, n2;
-	cin >> n1 >> n2;
-	LongInt r = mult(n1, n2);
-	cout << endl << r << endl;
+	srand(time(nullptr));
 	
-	/*for (int i = 1024; i <= 8192; i += 1024) {
-		cnt = 0;
-		LongInt a{ i };
-		fillRandom(a);
-		LongInt b{ i };
-		fillRandom(b);
-		LongInt m = mult(a, b);
-		cout << cnt << '\n';
-
-		a.clearMemory();
-		b.clearMemory();
-		m.clearMemory();
-
-	}*/
+	
+	for (int n = 1024; n <= 8192; n += 1024) {
+		cout << n << endl;
+		vector<int> n1 = randomNumber(n);
+		vector<int> n2 = randomNumber(n);
+		mul(n1, n2);
+	}
 
 	return 0;
 }
 
-LongInt absAdd(LongInt& a, LongInt& b)
+vector<int> randomNumber(int n)
 {
-	if (a.length() < b.length()) {
-		return absAdd(b, a);
+	vector<int> v;
+	v.push_back(rand() % 9 + 1);
+
+	for (int i = 1; i < n; i++) {
+		v.push_back(rand() % 10);
 	}
-
-	LongInt r{ a.length()};
-
-	int temp = 0;
-	for (int i = 0; i < a.length(); i++) {
-		r[i] = a[i] + temp;
-		cnt += 3;
-		if (i < b.length())
-		{
-			r[i] += b[i];
-			cnt += 2;
-		}
-
-		temp = r[i] / 10;
-		r[i] %= 10;
-		cnt += 4;
-	}
-
-	if (temp > 0) {
-		r.addDigit(temp);
-	}
-
-	return r;
+	return v;
 }
 
-LongInt absSub(LongInt& a, LongInt& b)
+
+vector<int> add(vector<int> a, vector<int> b)
 {
-	if (a.length() < b.length()) {
-		return absSub(b, a);
-	}
-
-	LongInt r{ a.length()};
-
-	int temp = 0;
-	for (int i = 0; i < a.length(); i++) {
-		r[i] = a[i] - temp;
-		
-		if (i < b.length()) {
-			r[i] -= b[i];
-		}
-		
-		if (r[i] < 0) {
-			r[i] += 10;
-			temp = 1;
-			cnt += 3;
-		} else {
-			temp = 0;
-		}
-	}
-
-	r.deleteZeroes();
-	return r;	
-}
-
-LongInt add(LongInt& a, LongInt& b)
-{
-	if (a.length() < b.length()) {
+	if (a.size() < b.size()) {
 		return add(b, a);
 	}
 
-	LongInt r;
-	if (a.sign() == b.sign()) {
-		r = absAdd(a, b);
-		r.setSign(a.sign());
-	} else {
-		int i = a.length() - 1;
-		if (a.length() == b.length()) {
-			while (i >= 0 && a[i] == b[i]) {
-				i--;
-				cnt += 3;
+	vector<int> result = a;
+
+	for (int i = 0; i < b.size(); i++) {
+		result[i] += b[i];
+	}
+
+	return result;
+}
+
+vector<int> sub(vector<int> a, vector<int> b)
+{
+	if (a.size() < b.size()) {
+		return add(b, a);
+	}
+
+	vector<int> result = a;
+
+	for (int i = 0; i < b.size(); i++) {
+		result[i] -= b[i];
+	}
+
+	return result;
+}
+
+void normalize(vector<int>& n)
+{
+	for (int i = 0; i < n.size(); i++) {
+
+		if (n[i] >= 10) {
+			if (i == n.size() - 1) {
+				n.push_back(0);
 			}
-		}
+			n[i + 1] += n[i] / 10;
+			n[i] = n[i] % 10;
 
-		if (a.length() != b.length() || a[i] > b[i]) {
-			r = absSub(a, b);
-			r.setSign(a.sign());
-		} else {
-			r = absSub(b, a);
-			r.setSign(false);
+		} else if (n[i] < 0) {
+			n[i] += 10;
+			n[i + 1] -= 1;
 		}
 	}
-	return r;
 }
 
-LongInt sub(LongInt& a, LongInt& b)
+void extend(vector<int>& a, vector<int>& b)
 {
-	LongInt b1 = b;
-	b1.setSign(!b1.sign());
-	return add(a, b1);
+	int n = max(a.size(), b.size());
+	n += n % 2;
+
+	for (int i = a.size(); i < n; i++) {
+		a.push_back(0);
+	}
+
+	for (int i = b.size(); i < n; i++) {
+		b.push_back(0);
+	}
+
 }
 
-LongInt shift(LongInt& x, int k)
-{
-	LongInt r{ x.length() + k};
-	r.setSign(x.sign());
 
+vector<int> mul(vector<int> a, vector<int> b)
+{
+	if (a.size() <= 1) {
+		return naiveMul(a, b);
+	}
+
+	extend(a, b);
+
+	int n = a.size();
+
+	vector<int> a1{ a.begin(), a.begin() + n / 2 };
+	vector<int> a2{ a.begin() + n / 2, a.end() };
+
+	vector<int> b1{ b.begin(), b.begin() + n / 2 };
+	vector<int> b2{ b.begin() + n / 2, b.end() };
+
+	vector<int> p1 = mul(a1, b1);
+	vector<int> p2 = mul(a2, b2);
+	vector<int> p3 = mul(sub(a2, a1), sub(b1, b2));
+	
+	vector<int> s1 = add(shift(p2, n), shift(p2, n / 2));
+	vector<int> s2 = shift(p3, n / 2);
+	vector<int> s3 = add(shift(p1, n / 2), p1);
+
+	return add(add(s1, s2), s3);
+}
+
+vector<int> naiveMul(vector<int> a, vector<int> b)
+{
+	vector<int> result;
+	int r = a[0] * b[0];
+
+	while (r) {
+		result.push_back(r % 10);
+		r /= 10;
+	}
+
+	return result;
+}
+
+vector<int> shift(vector<int> v, int k)
+{
 	for (int i = 0; i < k; i++) {
-		r[i] = 0;
-		cnt++;
+		v.insert(v.begin(), 0);
 	}
-	for (int i = k; i < x.length() + k; i++) {
-		r[i] = x[i - k];
-		cnt += 2;
-	}
-
-	return r;
+	return v;
 }
 
-pair<LongInt, LongInt> split(LongInt& x)
-{
-	cnt++;
-	int length1 = x.length() / 2;
-	int length2 = x.length() / 2 + x.length() % 2;
-	LongInt x1{ length1 };
 
-	if (length1 == 0) {
-		x1.addDigit(0);
-	}
-
-	LongInt x2{ length2 };
-
-	for (int i = 0; i < length1; i++) {
-		x1[i] = x[i];
-		cnt++;
-	}
-	for (int i = length1; i < x.length(); i++) {
-		x2[i - length1] = x[i];
-		cnt += 2;
-	}
-
-	return make_pair(x1, x2);
-}
-
-void equate(LongInt& a, LongInt& b)
-{
-	if (a.length() < b.length()) {
-		equate(b, a);
-		return;
-	}
-
-	while (a.length() != b.length()) {
-		b.addDigit(0);
-	}
-}
-
-LongInt mult(LongInt a, LongInt b)
-{
-	equate(a, b);
-	LongInt r;
-
-	cnt += 2;
-	if (a.length() == b.length() && a.length() <= 1) {
-		cnt += 2;
-
-
-		int m = a[0] * b[0];
-		int m1 = m;
-		int c = 0;
-		while (m1)
-		{
-			m1 /= 10;
-			c++;
-		}
-		r.resize(c);
-		for (int i = 0; i < c; i++) {
-			r[i] = m % 10;
-			m /= 10;
-		}
-
-		r.setSign(a.sign() == b.sign());
-		return r;
-	}
-
-
-	pair<LongInt, LongInt> aSplit = split(a);
-	pair<LongInt, LongInt> bSplit = split(b);
-
-	int n = max(a.length(), b.length());
-	cnt++;
-
-	LongInt first = mult(aSplit.first, bSplit.first);
-	LongInt second = mult(aSplit.second, bSplit.second);
-	LongInt sub1 = sub(aSplit.second, aSplit.first);
-	LongInt sub2 = sub(bSplit.first, bSplit.second);
-	LongInt comb = mult(sub1, sub2);
-	LongInt shift1 = shift(second, n);
-	LongInt shift2 = shift(second, n / 2);
-	LongInt shift3 = shift(comb, n / 2);
-	LongInt shift4 = shift(first, n / 2);
-	LongInt sum1 = add(shift1, shift2);
-	LongInt sum2 = add(shift4, first);
-	LongInt sum3 = add(sum1, shift3);
-
-	cnt += 3;
-	r = add(sum3, sum2);
-	
-	cnt++;
-	r.setSign(a.sign() == b.sign());
-
-	first.clearMemory();
-	second.clearMemory();
-	sub1.clearMemory();
-	sub2.clearMemory();
-	comb.clearMemory();
-	aSplit.first.clearMemory();
-	aSplit.second.clearMemory();
-	bSplit.first.clearMemory();
-	bSplit.second.clearMemory();
-	shift1.clearMemory();
-	shift2.clearMemory();
-	shift3.clearMemory();
-	shift4.clearMemory();
-	sum1.clearMemory();
-	sum2.clearMemory();
-	sum3.clearMemory();
-	
-	return r;
-}
-
-void fillRandom(LongInt& x)
-{
-	x[0] = rand() % 9 + 1;
-	for (int i = 1; i < x.length(); i++) {
-		x[i] = rand() % 10;
-	}
-}
