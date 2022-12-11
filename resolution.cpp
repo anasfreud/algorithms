@@ -9,13 +9,13 @@ using namespace std;
 #define MAX_DIS 10
 #define BASE 3
 
-int toTernary(int x) {
-    int n = 0;
+string toTernary(int x) {
+    string s;
     while (x) {
-        n = n * 10 + (x % BASE);
+        s += to_string(x % BASE);
         x /= BASE;
     }
-    return n;
+    return s;
 }
 
 int fromTernary(int* a, int n) {
@@ -26,11 +26,19 @@ int fromTernary(int* a, int n) {
     return x;
 }
 
+void printRow(int* a, int n) {
+    cout << "row: ";
+    for (int i = 0; i < n; i++) {
+        cout << a[i];
+    }
+    cout << endl;
+}
+
 
 struct Formula {
     int maxDisCnt = 0;
     int varCnt = 0;
-    int disCnt = 0;
+
     bool* d;
 
     Formula(int n) {
@@ -41,11 +49,10 @@ struct Formula {
     }
 
     void generate() {
+        d[0] = true;
         for (int i = 1; i < maxDisCnt; i++) {
             d[i] = rand() % 2;
-            if (d[i]) {
-                disCnt++;
-            }
+            
         }
     }
 
@@ -78,16 +85,18 @@ struct Formula {
                     x /= BASE;
                     cnt--;
                 }
-                result += ")";
-                if (dis != disCnt) {
-                    result += " & \n";
-                }
+                result += ") & \n";
+                
             }
         }
+        result += "()";
         return result;
     }
 
     void resolution() {
+
+       
+
         int** a;
         a = new int* [maxDisCnt];
 
@@ -100,6 +109,14 @@ struct Formula {
                 x /= BASE;
             }
         }
+
+        for (int i = 0; i < maxDisCnt; i++) {
+            if (d[i]) {
+                cout << i << " " << toTernary(i) << " ";
+                printRow(a[i], varCnt);
+            }
+        }
+        cout << endl;
 
         
         int changes = 1;
@@ -126,6 +143,8 @@ struct Formula {
                     }
 
                     if (cont > 0) {
+                        printRow(a[i], varCnt);
+                        printRow(a[j], varCnt);
                         int* b = new int[varCnt];
                     
                         for (int q = 0; q < varCnt; q++) {
@@ -140,16 +159,22 @@ struct Formula {
                             }
                         }
 
+                        cout << "result ";
+                        printRow(b, varCnt);
+                        cout << endl;
+
+                        int p = fromTernary(b, varCnt);
                         d[i] = false;
                         d[j] = false;
-                        d[fromTernary(b, varCnt)] = true;
-                        disCnt--;
+                        d[p] = true;
+
+                      
                         changes++;
+                        break;
                     }
                 }
             }
         }
-        cout << endl <<  disCnt << endl;
     }
 };
 
@@ -159,7 +184,7 @@ int main()
 {
     srand(time(nullptr));
 
-    Formula f{ 3 };
+    Formula f{ 2 };
     cout << f.getString() << endl;
     f.resolution();
     cout << endl << f.getString() << endl;
