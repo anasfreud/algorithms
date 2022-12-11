@@ -11,13 +11,19 @@ using namespace std;
 
 int toTernary(int x) {
     int n = 0;
-
     while (x) {
         n = n * 10 + (x % BASE);
         x /= BASE;
     }
-
     return n;
+}
+
+int fromTernary(int* a, int n) {
+    int x = 0;
+    for (int i = 0; i < n; i++) {
+        x += a[i] * pow(3, i);
+    }
+    return x;
 }
 
 
@@ -26,7 +32,6 @@ struct Formula {
     int varCnt = 0;
     int disCnt = 0;
     bool* d;
-
 
     Formula(int n) {
         varCnt = n;
@@ -82,9 +87,6 @@ struct Formula {
         return result;
     }
 
-
-
-
     void resolution() {
         int** a;
         a = new int* [maxDisCnt];
@@ -99,97 +101,68 @@ struct Formula {
             }
         }
 
-
-        // x1 & -x1
-        // x1 | x2 & -x1 | x3 =
-        // убираю диз -
-        // добвавляю новый
-
-        // 2 1
-        // 1 2
-
-
-        //0 0 - 0
-        //0 1 - 1
-        //0 2 - 2
-        //1 0 - 1
-        //1 1 - 1
-        //1 2 - 0
-        //2 0 - 2
-        //2 1 - 0
-        //2 2 - 2
         
+        int changes = 1;
 
-        for (int i = 0; i < maxDisCnt; i++) {
-            for (int k = 0; k < maxDisCnt; k++) {
+        while (changes != 0) {
 
-                int* b = new int[varCnt];
+            changes = 0;
 
-                for (int j = 0; j < varCnt; j++) {
-                    if (a[i][j] == 0 || a[k][j] == 0) {
-                        b[j] = a[i][j] + a[k][j];
-                    } else if (a[i][j] == a[k][j]) {
-                        b[i] = a[i][j];
-                    } else {
-                        b[i] = 0;
+            for (int i = 0; i < maxDisCnt; i++) {
+                if (!d[i]) {
+                    continue;
+                }
+
+                for (int j = i + 1; j < maxDisCnt; j++) {
+                    if (!d[j]) {
+                        continue;
                     }
 
-                }
+                    int cont = 0;
+                    for (int q = 0; q < varCnt; q++) {
+                        if ((a[i][q] == 1 && a[j][q] == 2) || (a[i][q] == 2 && a[j][q] == 1)) {
+                            cont++;
+                        }
+                    }
 
-                d[i] = false;
-                d[k] = false;
-                int p = 0;
-                for (int j = 0; j < varCnt; j++) {
-                    p = p * BASE + b[j];
-                }
-                d[p] = true;
-                disCnt--;
-            }
-
-
-
-
-            /*for (int j = 0; j < varCnt; j++) {
-                for (int k = 0; k < maxDisCnt; k++) {
-                    if (abs(a[i][j] - a[k][j]) == 1) {
-                        d[i] = false;
-                        d[k] = false;
+                    if (cont > 0) {
                         int* b = new int[varCnt];
-                        for (int q = 0; q < maxDisCnt; q++) {
-
+                    
+                        for (int q = 0; q < varCnt; q++) {
+                            if (a[i][q] == 0 || a[j][q] == 0) {
+                                b[q] = a[i][q] + a[j][q];
+                            }
+                            else if (a[i][q] == a[j][q]) {
+                                b[q] = a[i][q];
+                            }
+                            else {
+                                b[q] = 0;
+                            }
                         }
 
-
-
+                        d[i] = false;
+                        d[j] = false;
+                        d[fromTernary(b, varCnt)] = true;
+                        disCnt--;
+                        changes++;
                     }
                 }
-            }*/
-        }
-
-
-
-
-
-
-        for (int i = 0; i < maxDisCnt; i++) {
-            for (int j = 0; j < varCnt; j++) {
-                cout << a[i][j];
             }
-            cout << endl;
         }
-
+        cout << endl <<  disCnt << endl;
     }
 };
 
- 
+
 
 int main()
 {
     srand(time(nullptr));
 
     Formula f{ 3 };
-    cout << f.getString();
-    //f.resolution();
+    cout << f.getString() << endl;
+    f.resolution();
+    cout << endl << f.getString() << endl;
 
-	return 0;
+    return 0;
 }
