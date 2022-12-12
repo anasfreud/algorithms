@@ -6,13 +6,12 @@
 
 using namespace std;
 
-#define MAX_DIS 10
 #define BASE 3
 
 int fromTernary(int* a, int n) {
     int x = 0;
     for (int i = 0; i < n; i++) {
-        x += a[i] * pow(3, i);
+        x += a[i] * pow(3, n - i - 1);
     }
     return x;
 }
@@ -31,54 +30,66 @@ struct Formula {
     int varCnt = 0;
 
     bool* d;
+    int** table;
 
-    Formula(int n) {
-        varCnt = n;
-        maxDisCnt = pow(3, n);
-        d = new bool[maxDisCnt];
-        generate();
-    }
-
-    Formula(string s) {
+    void generate(string s) {
+        makeTable();
         fromString(s);
     }
 
-    void generate() {
+    void generate(int n) {
+        varCnt = n;
+        maxDisCnt = pow(3, n);
+
+        makeTable();
+
+        d = new bool[maxDisCnt];
         d[0] = true;
         for (int i = 1; i < maxDisCnt; i++) {
             d[i] = rand() % 2;
         }
     }
 
+    void makeTable() {
+        table = new int* [maxDisCnt];
+        for (int i = 0; i < maxDisCnt; i++) {
+            table[i] = new int[varCnt];
+            int x = i;
+            for (int j = varCnt - 1; j >= 0; j--) {
+                table[i][j] = x % BASE;
+                x /= BASE;
+            }
+        }
+    }
+
     string getString() {
 
-        string result = "";
+        int disCnt = 0;
+        for (int i = 1; i < maxDisCnt; i++) {
+            if (d[i]) {
+                disCnt++;
+            }
+        }
+        if (!disCnt) {
+            return "()";
+        }
 
+        string result = "";
+        makeTable();
         for (int i = 1; i < maxDisCnt; i++) {
             if (d[i]) {
                 result += "(";
 
-                int x = i;
-                int cnt = varCnt;
-                
-                while (x) {
-                    int n = x % BASE;
+                for (int q = 0; q < varCnt; q++) {
+                    if (table[i][q] == 1) {
+                        result += "-x" + to_string(q + 1) + "|";
 
-                    if (n) {
-                        if (n == 1) {
-                            result += "-";
-                        }
-                        result += "x" + to_string(cnt);
-                        if (x / BASE != 0) {
-                            result += "|";
-                        }
+                    } else if (table[i][q] == 2) {
+                        result += "x" + to_string(q + 1) + "|";
                     }
-
-                    x /= BASE;
-                    cnt--;
                 }
+                result.erase(result.length() - 1, 1);
                 result += ")&";
-                
             }
         }
         result.erase(result.length() - 1, 1);
@@ -87,19 +98,7 @@ struct Formula {
 
     void resolution() {
 
-        int** a;
-        a = new int* [maxDisCnt];
-
-        for (int i = 0; i < maxDisCnt; i++) {
-            a[i] = new int[varCnt];
-
-            int x = i;
-            for (int j = 0; j < varCnt; j++) {
-                a[i][j] = x % BASE;
-                x /= BASE;
-            }
-        }
-
+        makeTable();
         int changes = 1;
 
         while (changes != 0) {
@@ -117,21 +116,28 @@ struct Formula {
                     }
 
                     int cont = 0;
+                    int comm = 0;
                     for (int q = 0; q < varCnt; q++) {
-                        if ((a[i][q] == 1 && a[j][q] == 2) || (a[i][q] == 2 && a[j][q] == 1)) {
+                        if (table[i][q] == table[j][q]) {
+                            comm++;
+                        } else {
                             cont++;
                         }
+                        /*if ((table[i][q] == 1 && table[j][q] == 2) || (table[i][q] == 2 && table[j][q] == 1)) {
+                            cont++;
+                        }*/
                     }
 
-                    if (cont > 0) {
+                    if (cont == 1 && comm == varCnt - 1) {
                         int* b = new int[varCnt];
-                    
+
                         for (int q = 0; q < varCnt; q++) {
-                            if (a[i][q] == 0 || a[j][q] == 0) {
-                                b[q] = a[i][q] + a[j][q];
-                            }
-                            else if (a[i][q] == a[j][q]) {
-                                b[q] = a[i][q];
+
+                            /*if (table[i][q] == 0 || table[j][q] == 0) {
+                                b[q] = table[i][q] + table[j][q];
+                            }*/
+                            if (table[i][q] == table[j][q]) {
+                                b[q] = table[i][q];
                             }
                             else {
                                 b[q] = 0;
@@ -140,9 +146,15 @@ struct Formula {
 
                         d[i] = false;
                         d[j] = false;
+                        int p = fromTernary(b, varCnt);
+
+                        /*if (p == 0) {
+                            memset(d, 0, maxDisCnt);
+                            return;
+                        }*/
+
                         d[fromTernary(b, varCnt)] = true;
 
-                      
                         changes++;
                         break;
                     }
@@ -151,8 +163,7 @@ struct Formula {
         }
     }
 
-
-    void fromString(string s) 
+    void fromString(string s)
     {
         int m = 0;
         for (int i = 0; i < s.length(); i++) {
@@ -181,6 +192,7 @@ struct Formula {
 
         for (int i = 0; i < s.length(); i++) {
             char c = s[i];
+
             switch (c) {
             case '&':
                 d[fromTernary(b, varCnt)] = true;
@@ -204,10 +216,6 @@ struct Formula {
         }
 
         d[fromTernary(b, varCnt)] = true;
-
-        //for (int i = 0; i < maxDisCnt; i++) {
-        //    cout << d[i] << endl;
-        //}
     }
 };
 
@@ -216,12 +224,17 @@ struct Formula {
 int main()
 {
     srand(time(nullptr));
-
+   
     string s;
-    cin >> s;
+   // cin >> s;
+    
+    Formula f;
+    f.generate(2);
+    cout << f.getString() << endl;
+    f.resolution();
+    cout << f.getString() << endl;
 
-    Formula g{ s };
-    string gStr = g.getString();
-    cout << gStr << endl;
+   
+
     return 0;
 }
