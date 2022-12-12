@@ -16,15 +16,6 @@ int fromTernary(int* a, int n) {
     return x;
 }
 
-void printRow(int* a, int n) {
-    cout << "row: ";
-    for (int i = 0; i < n; i++) {
-        cout << a[i];
-    }
-    cout << endl;
-}
-
-
 struct Formula {
     int maxDisCnt = 0;
     int varCnt = 0;
@@ -117,25 +108,21 @@ struct Formula {
 
                     int cont = 0;
                     int comm = 0;
+
                     for (int q = 0; q < varCnt; q++) {
-                        if (table[i][q] == table[j][q]) {
+                        if ((table[i][q] == 1 && table[j][q] == 2) || (table[i][q] == 2 && table[j][q] == 1)) {
+                            cont++;
+                        } else if (table[i][q] == table[j][q]) {
                             comm++;
                         } else {
-                            cont++;
+                            break;
                         }
-                        /*if ((table[i][q] == 1 && table[j][q] == 2) || (table[i][q] == 2 && table[j][q] == 1)) {
-                            cont++;
-                        }*/
                     }
 
                     if (cont == 1 && comm == varCnt - 1) {
                         int* b = new int[varCnt];
 
                         for (int q = 0; q < varCnt; q++) {
-
-                            /*if (table[i][q] == 0 || table[j][q] == 0) {
-                                b[q] = table[i][q] + table[j][q];
-                            }*/
                             if (table[i][q] == table[j][q]) {
                                 b[q] = table[i][q];
                             }
@@ -148,10 +135,10 @@ struct Formula {
                         d[j] = false;
                         int p = fromTernary(b, varCnt);
 
-                        /*if (p == 0) {
+                        if (p == 0) {
                             memset(d, 0, maxDisCnt);
                             return;
-                        }*/
+                        }
 
                         d[fromTernary(b, varCnt)] = true;
 
@@ -224,17 +211,12 @@ struct Formula {
 int main()
 {
     srand(time(nullptr));
-   
-    string s;
-   // cin >> s;
     
     Formula f;
     f.generate(2);
     cout << f.getString() << endl;
     f.resolution();
     cout << f.getString() << endl;
-
-   
 
     return 0;
 }
